@@ -25,7 +25,7 @@ module ActiveModel
 
     def json_key
       if root.nil?
-        @resource_name
+        object[0] ? object[0].class.name.underscore.pluralize : @resource_name
       else
         root
       end

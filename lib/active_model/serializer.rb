@@ -65,7 +65,7 @@ end
       alias root= _root=
 
       def root_name
-        name.demodulize.underscore.sub(/_serializer$/, '') if name
+        name.underscore.sub(/_serializer$/, '') if name
       end
 
       def attributes(*attrs)
@@ -134,6 +134,12 @@ end
         if included_associations.include? name
           if association.embed_ids?
             hash[association.key] = serialize_ids association
+            if association.polymorphic?
+              association_serializer = build_serializer(association)
+              if association_serializer.object
+                hash["#{association.key}Type"] = association_serializer.object.class.name.underscore
+              end
+            end
           elsif association.embed_objects?
             hash[association.embedded_key] = serialize association
           end
@@ -161,7 +167,8 @@ end
             hash.merge! association_serializer.embedded_in_root_associations
 
             serialized_data = association_serializer.serializable_object
-            key = association.root_key
+            object = Array.wrap(association_serializer.object)[0]
+            key = object ? object.class.name.underscore.pluralize : association.root_key
             if hash.has_key?(key)
               hash[key].concat(serialized_data).uniq!
             else
